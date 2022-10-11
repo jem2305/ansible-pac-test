@@ -30,10 +30,10 @@
         state: present
         force_init: yes
         variables: {
-          "ARM_SUBSCRIPTION_ID": "{{ AZURE_SUBSCRIPTION_ID }}",
-          "ARM_CLIENT_ID": "{{ AZURE_CLIENT_ID }}",
-          "ARM_TENANT_ID": "{{ AZURE_TENANT_ID }}",
-          "ARM_CLIENT_SECRET": "{{ AZURE_CLIENT_SECRET }}"
+          "ARM_SUBSCRIPTION_ID": "{{ subscription_id }}",
+          "ARM_CLIENT_ID": "{{ client_id }}",
+          "ARM_TENANT_ID": "{{ tenant }}",
+          "ARM_CLIENT_SECRET": "{{ secret }}"
         }
       register: tfplan
 
