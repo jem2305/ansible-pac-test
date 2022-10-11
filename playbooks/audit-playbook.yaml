@@ -1,0 +1,26 @@
+- hosts: localhost
+  connection: local
+  vars:
+    audit_resource_group: mlopscluster03rg
+    policy_as_code_plan_validation_url: "http://169.48.153.174:8181/v1/data/policyascode/audit"
+  tasks:
+    - name: get all nsgs for resource group
+      azure.azcollection.azure_rm_securitygroup_info:
+        resource_group: "{{ audit_resource_group }}"
+      register: network_security_groups
+        
+    - name: Validate plan
+      ansible.builtin.uri:
+        url: "{{ policy_as_code_plan_validation_url }}"
+        method: POST
+        body: '{"input": {{ network_security_groups }} }'
+        body_format: json
+      check_mode: no
+      register: validation_response
+
+    - name: Set validation failures variable
+      set_fact: validation_failures="{{validation_response.json.result.resource_validation_failures}}"
+
+    - name: Print validation failures
+      ansible.builtin.debug:
+        var: validation_failures
