@@ -1,0 +1,67 @@
+- hosts: localhost
+  connection: local
+  vars:
+    git_clone_path: '/tmp'
+    tf_project_path: '/tmp/terraform'
+    policy_as_code_plan_validation_url: "http://opa-opa.apps.pawaro.eastus.aroapp.io/v1/data/policyascode"
+    ARM_SUBSCRIPTION_ID: ''
+    ARM_CLIENT_ID: ''
+    ARM_TENANT_ID: ''
+    ARM_CLIENT_SECRET: ''
+    git_repo_https_clone_url: "https://github.com/jem2305/ansible-pac-test.git"
+
+  tasks:
+    - name: Create empty terraform folder
+      file:
+        path: "{{ git_clone_path }}"
+        state: directory
+        mode: 0755
+      check_mode: no
+
+    - name: Clone Git repo holding Terraform scripts
+      git:
+        repo: "{{ git_repo_https_clone_url }}"
+        dest: "{{ git_clone_path }}"
+        clone: yes
+        force: yes
+        single_branch: yes
+        version: main
+      check_mode: no
+
+    - name: Init terraform
+      community.general.terraform:
+        project_path: "{{ tf_project_path }}"
+        state: present
+        force_init: yes
+        variables: {
+          "ARM_SUBSCRIPTION_ID": "{{ ARM_SUBSCRIPTION_ID }}",
+          "ARM_CLIENT_ID": "{{ ARM_CLIENT_ID }}",
+          "ARM_TENANT_ID": "{{ ARM_TENANT_ID }}",
+          "ARM_CLIENT_SECRET": "{{ ARM_CLIENT_SECRET }}"
+        }
+      register: tfplan
+
+    - name: Parse plan file
+      set_fact:
+        tfplan_file: "{{ tfplan.command.split(' ') | last }}"
+
+    - ansible.builtin.command: 
+        cmd: "terraform show -json {{ tfplan_file }}"
+        chdir: "{{ tf_project_path }}"
+      check_mode: no
+      register: tfshow
+    
+    - name: Validate plan
+      ansible.builtin.uri:
+        url: "{{ policy_as_code_plan_validation_url }}"
+        method: POST
+        body: '{"input": {{ tfshow.stdout }} }'
+        body_format: json
+      check_mode: no
+      register: validation_response
+      failed_when:
+        - validation_response.json.result.terraform_plan_passes_validation == false
+
+    - name: Print validation response
+      debug:
+        msg: "{{ validation_response }}"
