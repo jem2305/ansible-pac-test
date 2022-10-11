@@ -16,7 +16,7 @@ resource_validation_failures[vaildation_failure] {
 
 resource_validation_failures[vaildation_failure] {
   nsg_rules_with_protocol_type_any := {nsg_rule | nsg_rule := input.securitygroups[_].rules[_]; nsg_rule.protocol == "*" }
-  vaildation_failure := get_validation_failure_for_resource(nsg_rules_with_protocol_type_any[_], "Network security group rule must not use 'Any' type, must select TCP/UDP/ICMP.", "playbooks/remediation/change_nsg_rule_protocol_type.yaml", {"id": nsg_rules_with_protocol_type_any[_].id, "new_protocol": "FIXME: Tcp/Udp/Icmp"})
+  vaildation_failure := get_validation_failure_for_resource(nsg_rules_with_protocol_type_any[_], "Network security group rule must not use 'Any' type, must select TCP/UDP/ICMP.", "playbooks/change_nsg_rule_protocol_type.yaml", {"id": nsg_rules_with_protocol_type_any[_].id, "new_protocol": "FIXME: Tcp/Udp/Icmp"})
 }
 
 resource_validation_failures[vaildation_failure] {
