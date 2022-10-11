@@ -1,8 +1,8 @@
 - hosts: localhost
   connection: local
   vars:
-    git_clone_path: '/tmp'
-    tf_project_path: '/tmp/terraform'
+    git_clone_path: '/tmp/ansible-pac-test'
+    tf_project_path: '/tmp/ansible-pac-test/terraform'
     policy_as_code_plan_validation_url: "http://opa-opa.apps.pawaro.eastus.aroapp.io/v1/data/policyascode"
     git_repo_https_clone_url: "https://github.com/jem2305/ansible-pac-test.git"
 
