@@ -1,0 +1,31 @@
+- hosts: localhost
+  connection: local
+  vars:
+    git_clone_destination_path: "/tmp/policies"
+    policy_as_code_add_or_update_policy_url: "http://169.48.153.174:8181/v1/policies/"
+    git_repo_https_clone_url: "https://github.com/jem2305/ansible-pac-test.git"
+    file_name_from_filepath_regex: '[^\\\/]+(?=\.[\w]+$)|[^\\\/]+$/'
+  tasks:
+    - name: Create empty policies folder
+      file:
+        path: "{{ git_clone_destination_path }}"
+        state: directory
+        mode: 0755
+    - name: Clone policies Git repo
+      git:
+        repo: "{{ git_repo_https_clone_url }}"
+        dest: "{{ git_clone_destination_path }}"
+        clone: yes
+        force: yes
+        single_branch: yes
+        version: main
+    - name: Send each policy file to the policies validation server
+      uri:
+        url: "{{ policy_as_code_add_or_update_policy_url + ( item | regex_search(file_name_from_filepath_regex) ) }}"
+        method: PUT
+        body: "{{ lookup('file', item) }}"
+        body_format: json
+      when: "'_test.rego' not in item"
+      check_mode: no
+      with_fileglob:
+       - "{{ git_clone_destination_path }}/*.rego"
