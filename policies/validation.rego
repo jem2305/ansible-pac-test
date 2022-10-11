@@ -31,8 +31,6 @@ resource_validation_failures[vaildation_failure] {
   vaildation_failure := get_validation_failure_for_resource(network_security_groups_without_required_tags[_], "Network security group is missing required tags")
 }
 
-
-
 resource_validation_failures[vaildation_failure] {
   network_security_group_name_pattern := "^pepsico-nsg-.{3,}"
 
@@ -41,7 +39,3 @@ resource_validation_failures[vaildation_failure] {
 
   vaildation_failure := get_validation_failure_for_resource(network_security_groups_without_valid_names[_], "Network security group has an invalid name")
 }
-Footer
-© 2022 GitHub, Inc.
-Footer navigation
-Terms
