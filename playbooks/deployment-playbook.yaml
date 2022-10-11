@@ -4,10 +4,6 @@
     git_clone_path: '/tmp'
     tf_project_path: '/tmp/terraform'
     policy_as_code_plan_validation_url: "http://opa-opa.apps.pawaro.eastus.aroapp.io/v1/data/policyascode"
-    ARM_SUBSCRIPTION_ID: ''
-    ARM_CLIENT_ID: ''
-    ARM_TENANT_ID: ''
-    ARM_CLIENT_SECRET: ''
     git_repo_https_clone_url: "https://github.com/jem2305/ansible-pac-test.git"
 
   tasks:
@@ -34,10 +30,10 @@
         state: present
         force_init: yes
         variables: {
-          "ARM_SUBSCRIPTION_ID": "{{ ARM_SUBSCRIPTION_ID }}",
-          "ARM_CLIENT_ID": "{{ ARM_CLIENT_ID }}",
-          "ARM_TENANT_ID": "{{ ARM_TENANT_ID }}",
-          "ARM_CLIENT_SECRET": "{{ ARM_CLIENT_SECRET }}"
+          "ARM_SUBSCRIPTION_ID": "{{ AZURE_SUBSCRIPTION_ID }}",
+          "ARM_CLIENT_ID": "{{ AZURE_CLIENT_ID }}",
+          "ARM_TENANT_ID": "{{ AZURE_TENANT_ID }}",
+          "ARM_CLIENT_SECRET": "{{ AZURE_CLIENT_SECRET }}"
         }
       register: tfplan
 
