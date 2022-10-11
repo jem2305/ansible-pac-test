@@ -30,7 +30,7 @@
         job_type: "run"
         organization: "Default"
         inventory: "Demo Inventory"
-        project: "Playbooks PaC Project"
+        project: "Policy as Code"
         playbook: "{{ item.playbook }}"
         credentials:
           - "Azure Service Principal"
