@@ -29,7 +29,7 @@ provider "azurerm" {
 resource "azurerm_resource_group" "main" {
   name     = "ansible-test-resources"
   location = "eastus"
-  # tags = {
-  #   "Cost-Center" = "HR Department"
-  # }
+  tags = {
+    "Cost-Center" = "HR Department"
+  }
 }
