@@ -5,6 +5,10 @@
     tf_project_path: '/tmp/ansible-pac-test/terraform'
     policy_as_code_plan_validation_url: "http://opa-opa.apps.pawaro.eastus.aroapp.io/v1/data/policyascode"
     git_repo_https_clone_url: "https://github.com/jem2305/ansible-pac-test.git"
+    azure_client_id: '{{ lookup("env", "AZURE_CLIENT_ID") }}'
+    azure_secret: '{{ lookup("env", "AZURE_SECRET") }}'
+    azure_tenant: '{{ lookup("env", "AZURE_TENANT") }}'
+    azure_subscription_id: '{{ lookup("env", "AZURE_SUBSCRIPTION_ID") }}'
 
   tasks:
     - name: Create empty terraform folder
@@ -30,10 +34,10 @@
         state: present
         force_init: yes
         variables: {
-          "ARM_SUBSCRIPTION_ID": "{{ subscription_id }}",
-          "ARM_CLIENT_ID": "{{ client_id }}",
-          "ARM_TENANT_ID": "{{ tenant }}",
-          "ARM_CLIENT_SECRET": "{{ secret }}"
+          "ARM_SUBSCRIPTION_ID": "{{ azure_subscription_id }}",
+          "ARM_CLIENT_ID": "{{ azure_client_id }}",
+          "ARM_TENANT_ID": "{{ azure_tenant }}",
+          "ARM_CLIENT_SECRET": "{{ azure_secret }}"
         }
       register: tfplan
 
