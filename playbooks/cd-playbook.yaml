@@ -2,8 +2,9 @@
   connection: local
   vars:
     git_clone_destination_path: "/tmp/policies"
-    policy_as_code_add_or_update_policy_url: "http://169.48.153.174:8181/v1/policies/"
-    git_repo_https_clone_url: "https://github.com/jem2305/ansible-pac-test.git"
+    policy_as_code_add_or_update_policy_url: "http://opa-opa.apps.pawaro.eastus.aroapp.io/v1/policies/"
+    git_repo_https_clone_url: "https://{{ git_user | urlencode }}:{{ git_password | urlencode }}@dev.azure.com/pepsico-ansible-poc/pepsico-ansible-pac/_git/policies"
+
     file_name_from_filepath_regex: '[^\\\/]+(?=\.[\w]+$)|[^\\\/]+$/'
   tasks:
     - name: Create empty policies folder
@@ -28,4 +29,4 @@
       when: "'_test.rego' not in item"
       check_mode: no
       with_fileglob:
-       - "{{ git_clone_destination_path }}/*.rego"
+       - "{{ git_clone_destination_path }}/policies/*.rego"
