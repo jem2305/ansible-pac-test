@@ -45,7 +45,7 @@
       ansible.builtin.uri:
         url: "{{ policy_as_code_plan_validation_url }}"
         method: POST
-        body: '{"input": "tfplan":{ {{ tfshow.stdout }} } }'
+        body: '{ "input": { "tfplan": {{ tfshow.stdout }} } }'
         body_format: json
       check_mode: no
       register: validation_response
