@@ -5,7 +5,10 @@ package corp.policies
 ########################
 
 # Consider only these resource types in policy evaluations
-all_resource_types := {"ibm_cloudant"}
+all_resource_types := {
+    "ibm_cloudant",
+    "ibm_cos_bucket"
+}
 
 #########
 # Policy
@@ -67,6 +70,40 @@ policy_violations[CORP_040_00001_violation] {
     CORP_040_00001_violation := new_violation(
         CORP_040_00001_id,
         resources_requiring_costcenter_tag[ without_costcenter_tag[_] ]
+    )
+
+}
+
+# -----------------------------------------------------------------------------
+# Policy:       CORP-040-00002
+# Description:  All ibm_cos_buckets must not use public endpoints
+# -----------------------------------------------------------------------------
+CORP_040_00002_id := "CORP-040-00002"
+CORP_040_00002_message := "Cloud Object Storage buckets must not use public endpoints"
+
+# add CORP_040_00002 policy to policy set
+policies[policy_id] := policy {
+    policy_id := CORP_040_00002_id
+    policy := {
+        "reason": CORP_040_00002_message,
+        "level": LEVEL.BLOCK
+    }
+}
+
+# add CORP_040_00002 violations to violations list if any exist
+policy_violations[CORP_040_00002_violation] {
+
+    # select all Cloud Object Storage buckets
+    cloud_object_storage_buckets := resources["ibm_cos_bucket"]
+
+    # get a list of COS buckets that have public endpoints
+    some index
+    cloud_object_storage_buckets[index].values.endpoint_type == "public"
+
+    # loop through with_public_endpoints[] and create a new policy violation
+    CORP_040_00002_violation := new_violation(
+        CORP_040_00002_id,
+        cloud_object_storage_buckets[index]
     )
 
 }

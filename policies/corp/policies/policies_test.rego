@@ -35,3 +35,9 @@ test_CORP_040_00001_detects_multiple if {
     policy_violations[y].id == "ibm_cloudant.cloudant_5" with input as test_input
     policy_violations[z].id == "ibm_cloudant.cloudant_6" with input as test_input
 }
+
+test_CORP_040_00002_not_allow_public_endpoints if {
+    test_input := {"tfplan":{"resource_changes":[{"address":"ibm_cos_bucket.policy_as_code_bucket","type":"ibm_cos_bucket","change":{"after":{"endpoint_type":"public"}}}]}}
+    not passes_validation with input as test_input
+    count(policy_violations) == 1 with input as test_input
+}
