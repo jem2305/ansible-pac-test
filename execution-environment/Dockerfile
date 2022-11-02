@@ -6,10 +6,10 @@ USER root
 RUN microdnf install yum
 
 # # Install Terraform, IBM Cloud CLI, and Ansible collections
-# RUN yum clean all && yum update -y && \
-#     yum install -y yum-utils && \
-#     yum-config-manager --add-repo https://rpm.releases.hashicorp.com/RHEL/hashicorp.repo && \
-#     yum -y install terraform && \
-#     curl -fsSL https://clis.cloud.ibm.com/install/linux | sh && \
-#     ansible-galaxy collection install community.general && \
-#     ansible-galaxy collection install awx.awx
+RUN yum clean all && yum update -y && \
+    yum install -y yum-utils && \
+    yum-config-manager --add-repo https://rpm.releases.hashicorp.com/RHEL/hashicorp.repo && \
+    yum -y install terraform && \
+    curl -fsSL https://clis.cloud.ibm.com/install/linux | sh && \
+    ansible-galaxy collection install community.general && \
+    ansible-galaxy collection install awx.awx
