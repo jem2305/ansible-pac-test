@@ -29,13 +29,21 @@ passes_validation {
 # -----------------------------------------------------------------------------
 CORP_040_00001_id := "CORP-040-00001"
 CORP_040_00001_message := "Resource is missing costcenter tag or does not comply to required regex"
-
+CORP_040_00001_playbook := "playbooks/attach_user_tag_to_ic_resource.yaml"
+# CORP_040_00001_playbook_vars[resource_id] := playbook_vars {
+#     some resource_id
+#     playbook_vars := {
+#             "resource_id": resource.id,
+#             "tag_names": ["costcenter:000000"]
+#     }
+# }
 # add CORP_040_00001 policy to policy set
 policies[policy_id] := policy {
     policy_id := CORP_040_00001_id
     policy := {
         "reason": CORP_040_00001_message,
-        "level": LEVEL.BLOCK
+        "level": LEVEL.BLOCK,
+        "playbook": CORP_040_00001_playbook
     }
 }
 
@@ -86,7 +94,8 @@ policies[policy_id] := policy {
     policy_id := CORP_040_00002_id
     policy := {
         "reason": CORP_040_00002_message,
-        "level": LEVEL.BLOCK
+        "level": LEVEL.BLOCK,
+        "playbook": ""
     }
 }
 
@@ -128,8 +137,8 @@ resources[resource_type] := all {
         # Terraform resources
         tf_resources[resource_type],
 
-        # Future resource type
-        []
+        # IBM Cloud resources
+        ic_resources[resource_type]
     )
 }
 
@@ -138,7 +147,8 @@ new_violation(policy_id, resource) = resource_failure {
     "id": resource.id,
     "policy_id": policy_id,
     "reason": policies[policy_id].reason,
-    "level": policies[policy_id].level
+    "level": policies[policy_id].level,
+    "playbook": policies[policy_id].playbook
   }
 }
 
@@ -163,4 +173,18 @@ standardize_terraform(tf_resource) = std_resource {
         "type": tf_resource.type,
         "values": tf_resource.change.after
     }
+}
+
+####################
+# IBM Cloud Library
+####################
+
+ic_resources[resource_type] := all {
+    some resource_type
+    all_resource_types[resource_type]
+
+    all := [resource |
+        resource := input.ibmcloud.resources[_]
+        resource.type == resource_type
+    ]
 }

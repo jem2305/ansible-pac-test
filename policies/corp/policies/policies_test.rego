@@ -2,13 +2,24 @@ package corp.policies
 
 import future.keywords
 
-test_CORP_040_00001_when_costcenter_matches_regex_passes if {
+test_CORP_040_00001_when_costcenter_matches_regex_passes_tf if {
     test_input := {"tfplan":{"resource_changes":[{"address":"ibm_cloudant.cloudant","type":"ibm_cloudant","change":{"after":{"tags":["costcenter:001511"]}}}]}}
     passes_validation with input as test_input
 }
 
-test_CORP_040_00001_when_costcenter_mismatches_regex_not_passes if {
+test_CORP_040_00001_when_costcenter_matches_regex_passes_ic if {
+    test_input := {"ibmcloud":{"resources": [{"id":"crn:xxx","type":"ibm_cloudant","values":{"tags":["costcenter:001511"]}}]}}
+    passes_validation with input as test_input
+}
+
+test_CORP_040_00001_when_costcenter_mismatches_regex_not_passes_tf if {
     test_input := {"tfplan":{"resource_changes":[{"address":"ibm_cloudant.cloudant","type":"ibm_cloudant","change":{"after":{"tags":["costcenter:011"]}}}]}}
+    not passes_validation with input as test_input
+    count(policy_violations) == 1 with input as test_input
+}
+
+test_CORP_040_00001_when_costcenter_mismatches_regex_not_passes_ic if {
+    test_input := {"ibmcloud":{"resources": [{"id":"crn:xxx","type":"ibm_cloudant","values":{"tags":["costcenter:011"]}}]}}
     not passes_validation with input as test_input
     count(policy_violations) == 1 with input as test_input
 }
