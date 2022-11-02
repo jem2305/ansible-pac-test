@@ -1,0 +1,77 @@
+- hosts: localhost
+  connection: local
+  vars:
+    audit_resource_group: default
+    policy_as_code_plan_validation_url: "http://150.240.71.92:8181/v1/data/corp/policies"
+    IC_API_KEY: "{{ lookup('env', 'IC_API_KEY') }}"
+    bucket_regions:
+      - us-south
+      - us-east
+    cos_bucket_names: []
+
+  tasks:    
+    - name: Get ID Token for IBM Cloud
+      ansible.builtin.uri:
+        url: https://iam.cloud.ibm.com/identity/token
+        method: POST
+        return_content: yes
+        body:
+          grant_type: urn:ibm:params:oauth:grant-type:apikey
+          apikey: "{{ IC_API_KEY }}"
+        body_format: form-urlencoded
+        headers:
+          Accept: application/json
+      register: token_response
+    
+    - name: Extract access token
+      set_fact: ibmcloud_access_token="{{token_response.json.access_token}}" 
+
+    # TODO: loop if returns more than 100 resources
+    - name: Get IBM Cloud Resources
+      ansible.builtin.uri:
+        url: https://resource-controller.cloud.ibm.com/v2/resource_instances
+        method: GET
+        return_content: yes
+        headers:
+          Authorization: "Bearer {{ ibmcloud_access_token }}"
+          Accept: application/json
+      register: resource_instances_response
+
+    - name: Extract Cloud Object Storage instances
+      set_fact: cos_instances="{{ resource_instances_response.json.resources | selectattr("id", "match", "^crn:v1:bluemix:public:cloud-object-storage.+") | list }}" 
+
+    - name: Get COS bucket information for each instance
+      ansible.builtin.uri:
+        url: "https://s3.{{ item.1 }}.cloud-object-storage.appdomain.cloud"
+        method: GET
+        return_content: yes
+        headers:
+          Authorization: "Bearer {{ ibmcloud_access_token }}"
+          Accept: application/json
+          ibm-service-instance-id: "{{ item.0.guid }}"
+      loop: "{{ cos_instances | product(bucket_regions) | list }}"
+      register: bucket_info_responses
+
+    - name: Read an element's attribute values
+      community.general.xml:
+        xmlstring: "{{ item.content }}"
+        xpath: /x:ListAllMyBucketsResult/x:Buckets/x:Bucket/x:Name
+        content: text
+        namespaces:
+          x: "http://s3.amazonaws.com/doc/2006-03-01/"
+      loop: "{{ bucket_info_responses.results }}"
+      register: bucket_names_xmlresp
+
+    - name: Print XML
+      ansible.builtin.debug:
+        msg: "{{ item.matches }}"
+      loop: "{{ bucket_names_xmlresp.results }}"
+
+    - name: Build a list of all the bucket names.
+      set_fact:
+        cos_bucket_names: "{{ cos_bucket_names + item.matches }}"
+      loop: "{{ bucket_names_xmlresp.results }}"
+
+    - name: Print Bucket Names
+      ansible.builtin.debug:
+        msg: "{{ cos_bucket_names }}"
