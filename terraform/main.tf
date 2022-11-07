@@ -15,23 +15,20 @@ data "ibm_resource_group" "default_group" {
   name = "default"
 }
 
-resource "random_string" "bucket_id" {
-  length            = 8
-  special           = false
-  upper             = false
+resource "ibm_cloudant" "cloudant" {
+  name     = "policy-as-code-cloudant"
+  location = "us-south"
+  plan     = "lite"
+  tags     = ["costcenter:001589"]
+
+  timeouts {
+    create = "15m"
+    update = "15m"
+    delete = "15m"
+  }
 }
 
-data "ibm_resource_instance" "cos_instance" {
-  name              = "CloudObjectStorage"
-  resource_group_id = data.ibm_resource_group.default_group.id
-  service           = "cloud-object-storage"
-  location          = "global"
-}
-
-resource "ibm_cos_bucket" "policy_as_code_bucket" {
-  bucket_name          = "policyascode${random_string.bucket_id.result}"
-  resource_instance_id = data.ibm_resource_instance.cos_instance.id
-  region_location      = "us-south"
-  storage_class        = "standard"
-  endpoint_type        = "direct"
+resource "ibm_cloudant_database" "cloudant_database" {
+  instance_crn  = ibm_cloudant.cloudant.crn
+  db            = "policyascode"
 }
