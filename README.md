@@ -2,6 +2,25 @@
 
 This tutorial assumes the user is running Mac OS environment, commands for Windows users will be provided at a later time. If you are a Windows user, please use the equivalent commands for your operating system.
 
+## Table of Contents
+
+- [Ansible Policy as Code Tutorial](#ansible-policy-as-code-tutorial)
+  - [Table of Contents](#table-of-contents)
+  - [TechZone VM Provisioning](#techzone-vm-provisioning)
+  - [Install Ansible Automation Platform](#install-ansible-automation-platform)
+    - [Obtain Ansible Automation Platform Software](#obtain-ansible-automation-platform-software)
+    - [Install Single Node](#install-single-node)
+    - [Register Subscription](#register-subscription)
+  - [Clone GitHub Repositories](#clone-github-repositories)
+  - [Install Open Policy Agent (Podman)](#install-open-policy-agent-podman)
+  - [Configure Policy as Code Execution Environment](#configure-policy-as-code-execution-environment)
+    - [Add Execution Environment](#add-execution-environment)
+    - [Create API Key in IBM Cloud](#create-api-key-in-ibm-cloud)
+    - [Add API Key to Ansible Automation Platform](#add-api-key-to-ansible-automation-platform)
+    - [Create Policy as Code Project](#create-policy-as-code-project)
+  - [Infrastructure as Code Deployment](#infrastructure-as-code-deployment)
+  - [Resource Auditing & Remediation](#resource-auditing--remediation)
+
 ## TechZone VM Provisioning
 
 1. Use the base image here from here [RHEL 8.6 VSI on IBM Cloud](https://techzone.ibm.com/my/reservations/create/62ab7e6c79c3250017398d8b)
@@ -32,11 +51,10 @@ This tutorial assumes the user is running Mac OS environment, commands for Windo
 
 1. Download the Ansible Automation Platform bundle here [AAP Bundle Download](https://developers.redhat.com/products/ansible/download)
 
-1. Once you have downloaded, note the bundle name & version e.g. `ansible-automation-platform-setup-bundle-2.2.0-8.1.tar.gz` then, run the following commands while updating bundle name and version accordingly.
+2. Once you have downloaded, note the bundle name & version e.g. `ansible-automation-platform-setup-bundle-2.2.0-8.1.tar.gz` then, run the following commands, updating bundle name and version accordingly.
 
     ```shell
     scp -i ~/.ssh/policy_as_code_tutorial.pem -P 2223 ~/Downloads/ansible-automation-platform-setup-bundle-2.2.0-8.1.tar.gz itzuser@${TZ_AAP_IP_ADDRESS}:ansible-automation-platform-setup-bundle-2.2.0-8.1.tar.gz
-
     ```
 
 ### Install Single Node
@@ -77,77 +95,78 @@ This tutorial assumes the user is running Mac OS environment, commands for Windo
     ```shell
     sudo su
 
-    ./setup.sh
-
-    exit
+    ./setup.sh && exit
     ```
 
-1. Once installation is finished, you may then log into Ansible Automation Platform by pasting the public IP of your VM into a browser. Then enter the credentials U: `admin` P: `password`
+1. Once installation is finished, you may then log into Ansible Automation Platform by pasting the public IP of your VM into a browser. Then enter the credentials U: `admin` P: `password` . You will be presented with a screen that requires you to activate your subscription.
 
 ### Register Subscription
 
-[Subscription Asset Manager](https://access.redhat.com/management/subscription_allocations)
+When you first login to Ansible Automation Platform, you will need to register your subscription. Follow these steps to get a trial license.
+
+1. You can request a trial license from Red Hat using the following link: [Ansible Trial](https://www.redhat.com/en/technologies/management/ansible/trial). Login with your Red Hat account and proceed through the prompts.
+
+1. Once you have an active trial, you can allocate that subscription using the following link: [Subscription Asset Manager](https://access.redhat.com/management/subscription_allocations)
+
+1. Click "New Subscription Allocation" link, enter the following details and click "Create".
+
+    **Name:** PaC_Tutorial
+
+    **Type:** Subscription Asset Manager 1.4
+
+    ![New Subscription Allocation](docs/images/new-allocations.png)
+
+1. Click the "Subscriptions" tab and click "Add Subscriptions"
+
+    ![Add Subscriptions](docs/images/add-subscriptions.png)
+
+1. Search for the Ansible Trial licenses and add a few allocations e.g. 10 and click "Submit".
+
+    ![Add Allocations](docs/images/add-allocations.png)
+
+1. You can then click "Export manifest" button to download the manifest required to activate your subscription.
+
+    ![Export Manifest](docs/images/export-manifest.png)
+
+1. Navigate back to your Ansible Automation Platform screen and upload the manifest by clicking the "Browse" button and selecting the manifest zip e.g. `manifest_PaC_Tutorial_20221107T170958Z.zip`.
+
+    ![Upload Manifest](docs/images/upload-manifest.png)
+
+1. Click "Next", you may uncheck the Analytics request as below, and click "Next".
+
+    ![Uncheck Analytics](docs/images/uncheck-analytics.png)
+
+1. Finally, accept the license agreement by clicking "Submit".
+
+## Clone GitHub Repositories
+
+1. TODO: Clone the GitHub repositories, set environment variables, and ensure Docker build happens
 
 ## Install Open Policy Agent (Podman)
 
-1. Create a file `~/opa/config.yaml` with the following contents:
-
-    ```yaml
-    services:
-       - name: cos-us-south
-           url: https://s3.us-south.cloud-object-storage.appdomain.cloud
-
-    bundles:
-        authz:
-            service: cos-us-south
-            resource: policyascodejm/bundle.tar.gz
-            polling:
-            min_delay_seconds: 10
-            max_delay_seconds: 20
-    ```
-
-2. On the Ansible Automation Platform VM, run the following command to start Open Policy Agent
+1. On the Ansible Automation Platform VM, run the following command to start Open Policy Agent, replacing `<your_username>` with your GitHub username or organization containing the cloned repositories.
 
     ```shell
-    podman run --name opa -v ~/opa:/config -d --publish 8181:8181 --restart always docker.io/openpolicyagent/opa:0.45.0-rootless run --server -c /config/config.yaml
+    export GH_USERNAME=<your_username>
+
+    podman run --name opa -d --publish 8181:8181 --restart always ghcr.io/${GH_USERNAME}/ansible-pac-test-policies:main
     ```
 
-## Initialize Policy as Code Execution Environment
-
-### Create Quay.io Registry
-
-[Quay.io](https://quay.io)
-
-### Build Image
-
-1. Login to the Red Hat Registry & Quay.io Registry
-
-    ```shell
-    podman login registry.redhat.io
-    Username: <rhusername>
-    Password: ***********
-
-    podman login quay.io
-    Username: <quayiousername>
-    Password: ***********
-    ```
-
-1. Build the image
-
-    ```shell
-    podman build -t quay.io/<quayiousername>/ansible-pac-tutorial:0.0.1 --arch amd64 .
-    podman build -t quay.io/johnemibm/ansible-pac-tutorial:ibmcloud-0.0.1 --arch amd64 -f Dockerfile.ibmcloud .
-
-    podman push quay.io/<quayiousername>/ansible-pac-tutorial:0.0.1
-    ```
+## Configure Policy as Code Execution Environment
 
 ### Add Execution Environment
 
-Login to your Ansible Automation Platform and navigate to 'Administration -> Execution Environments' and create execution environment accordingly.
+1. Login to your Ansible Automation Platform and navigate to 'Administration -> Execution Environments' and create execution environment with the following configuration, replacing `<your_username>` with your GitHub username or organization containing the cloned repositories.
 
-![Execution Environment](docs/images/execution-environment.png)
+    **Name:** Policy as Code Execution Environment
+
+    **Image:** ghcr.io/<your_username>/ansible-pac-test-ee:main
+
+    **Pull:** Always pull container before running.
 
 ### Create API Key in IBM Cloud
+
+TODO
 
 ### Add API Key to Ansible Automation Platform
 
@@ -157,21 +176,21 @@ In Ansible Automation Platform, create a new Credential Type for IBM Cloud by pe
 
 1. Click 'Add', enter the following values, then save.
 
-    **Name:** Terraform IBM Cloud Provider
+    **Name:** IBM Cloud Provider
 
-    **Input Configuration:**
+    **Input Configuration (YAML):**
 
     ```yaml
     fields:
     - id: api_key
-        type: string
-        label: IBM Cloud API Key
-        secret: true
+      type: string
+      label: IBM Cloud API Key
+      secret: true
     required:
     - api_key
     ```
 
-    **Injector Configuration:**
+    **Injector Configuration (YAML):**
 
     ```yaml
     env:
@@ -182,14 +201,90 @@ In Ansible Automation Platform, create a new Credential Type for IBM Cloud by pe
 
     **Name:** IBM Cloud API Key
 
-    **Credential Type:** Terraform IBM Cloud Provider
+    **Credential Type:** IBM Cloud Provider
 
     **IBM Cloud API Key:** [Your IBM Cloud API Key]
 
 ### Create Policy as Code Project
 
-1. TODO: Clone repo on git
+1. Create a new project by navigating to 'Resources -> Projects', click 'Add', enter the following values (replacing `<your_username>`) and save.
 
-1. Create the project similar to the following, make sure to select the Policy as Code execution environment created in the last step.
+    **Name:** Policy as Code
 
-    ![Policy as Code Project](docs/images/pac-project.png)
+    **Organization:** Default
+
+    **Execution Environment:** Policy as Code Execution Environment
+
+    **Source Control Type:** Git
+
+    **Source Control URL:** [https://github.com/<your_username>/ansible-pac-test.git](https://github.com/<your_username>/ansible-pac-test.git)
+
+    **Source Control Branch/Tag/Commit:** main
+
+## Infrastructure as Code Deployment
+
+The policy as code repository comes pre-configured with one policy that will be used. This policy checks if all IBM Cloudant resources have a tag matching regex `^costcenter:(\\d){6}$` i.e. in the format `costcenter:NNNNNN` where `N` is some number `0-9`. An excerpt of this policy implementation is provided below from `policies/corp/policies/policies.rego`:
+
+```rego
+policy_violations[CORP_040_00001_violation] {
+
+    # select all resources that require a costcenter tag
+    resources_requiring_costcenter_tag := array.concat(
+        resources["ibm_cloudant"],
+        []
+    )
+
+    # get a list of resources that comply with the costcenter tag policy
+    with_costcenter_tag := { index |
+        some index, tag
+
+        # check that some tag matches the required regex for each
+        regex.match(
+            "^costcenter:(\\d){6}$", 
+            resources_requiring_costcenter_tag[index].values.tags[tag]
+        )
+    }
+
+    # get a list of of non-compliant resources [all resouces minus compliant resources]
+    without_costcenter_tag := { index |
+        some index
+        resources_requiring_costcenter_tag[index]
+        not with_costcenter_tag[index]
+    }
+
+    # loop through without_costcenter_tag[] and create a new policy violation
+    CORP_040_00001_violation := new_violation(
+        CORP_040_00001_id,
+        resources_requiring_costcenter_tag[ without_costcenter_tag[_] ]
+    )
+
+}
+```
+
+The Terraform resources also contains a definition for an IBM Cloudant instance that does not conform to the policy above. We will configure Ansible Automation Platform to first check this infrastructure and only if it passes all policies, will it be deployed.
+
+1. In Ansible Automation Platform, create a new Job Template by navigating to 'Resouces -> Templates', clicking 'Add -> Add job template', entering the following values and then clicking 'Save'.
+
+    **Name:** Check Terraform
+
+    **Job Type:** Check
+
+    **Inventory:** Demo Inventory
+
+    **Project:** Policy as Code
+
+    **Execution Environment:** Policy as Code Execution Environment
+
+    **Playbook:** playbooks/check-terraform.yaml
+
+    **Credentials (Selected Category):** IBM Cloud Provider
+
+    **Credentials (Selected):** IBM Cloud API Key
+
+    **Variables:** *Note: Update `<tz_aap_public_ip>` to the public IP of your Ansible Automation Platform instance*
+
+    ```yaml
+    policy_as_code_plan_validation_url: "http://<tz_aap_public_ip>:8181/v1/data/corp/policies"
+    ```
+
+## Resource Auditing & Remediation
