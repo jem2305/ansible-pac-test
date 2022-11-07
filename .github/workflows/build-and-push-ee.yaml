@@ -3,6 +3,8 @@ name: Build and publish Execution Environment image
 on:
   push:
     branches: ['main']
+    paths:
+      - execution-environment/**
 
 env:
   REGISTRY: ghcr.io
