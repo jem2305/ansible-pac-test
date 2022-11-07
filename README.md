@@ -340,6 +340,12 @@ The Terraform resources also contains a definition for an IBM Cloudant instance 
     }
     ```
 
-1. Commit the changes and rerun the 'Check & Deploy Terraform' workflow.
+1. Commit the changes and rerun the 'Check & Deploy Terraform' workflow. Note: if you do not have an upgraded IBM Cloud account, you must not have any other Cloudant instance or your deployment will fail.
+
+    ![Successful Workflow](docs/images/successful-workflow.png)
+
+1. You should also see the Cloudant instance in the IBM Cloud dashboard.
+
+    ![Cloudant Instance](docs/images/cloudant-instance.png)
 
 ## Resource Auditing & Remediation
