@@ -1,7 +1,10 @@
 - hosts: localhost
   connection: local
   vars:
-    policy_as_code_plan_validation_url: "http://150.240.71.92:8181/v1/data/corp/policies"
+    policy_as_code_plan_validation_url: "http://localhost:8181/v1/data/corp/policies"
+    CONTROLLER_HOST: "{{ lookup('env', 'CONTROLLER_HOST') }}"
+    CONTROLLER_USERNAME: "{{ lookup('env', 'CONTROLLER_USERNAME') }}"
+    CONTROLLER_PASSWORD: "{{ lookup('env', 'CONTROLLER_PASSWORD') }}"
     IC_API_KEY: "{{ lookup('env', 'IC_API_KEY') }}"
 
   tasks:    
@@ -96,11 +99,10 @@
         msg: "{{ validation_response }}"
 
     - name: Set validation failures variable
-      set_fact: policy_violations="{{validation_response.json.result.policy_violations}}"
+      set_fact: policy_violations="{{validation_response.json.result.policy_violations}}"            
 
     - name: Create job templates for each policy violation
       awx.awx.job_template:
-        # name: "{{ item.playbook.split('.') | first }}-{{ item.resource.etag.replace('\"', '').split('/') | last }}"
         name: "{{ item.playbook.split('.') | first | split('/') | last }}-{{ lookup('community.general.random_string', length=8, upper=false, special=false) }}"
         job_type: "run"
         organization: "Default"
@@ -110,7 +112,11 @@
         credentials:
           - "IBM Cloud API Key"
         execution_environment: "Policy as Code Execution Environment"
-        # extra_vars: "{{ item.playbook_variables }}"
+        controller_host: "{{ CONTROLLER_HOST }}"
+        controller_username: "{{ CONTROLLER_USERNAME }}"
+        controller_password: "{{ CONTROLLER_PASSWORD }}"
+        validate_certs: no
+        extra_vars: "{{ item.playbook_variables }}"
       when: item.playbook != 'Not implemented'
       with_items: "{{ policy_violations }}"
       register: create_job_template_results
