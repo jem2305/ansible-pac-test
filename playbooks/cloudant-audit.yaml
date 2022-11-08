@@ -101,14 +101,14 @@
     - name: Create job templates for each policy violation
       awx.awx.job_template:
         # name: "{{ item.playbook.split('.') | first }}-{{ item.resource.etag.replace('\"', '').split('/') | last }}"
-        name: "{{ item.playbook.split('.') | first }}-{{ item.id | last }}"
+        name: "{{ item.playbook.split('.') | first | split('/') | first }}-{{ lookup('community.general.random_string', length=6) }}"
         job_type: "run"
         organization: "Default"
         inventory: "Demo Inventory"
         project: "Policy as Code"
         playbook: "{{ item.playbook }}"
         credentials:
-          - "AAP Admin"
+          - "IBM Cloud API Key"
         execution_environment: "Policy as Code Execution Environment"
         # extra_vars: "{{ item.playbook_variables }}"
       when: item.playbook != 'Not implemented'
