@@ -94,3 +94,24 @@
     - name: Print response
       debug:
         msg: "{{ validation_response }}"
+
+    - name: Set validation failures variable
+      set_fact: policy_violations="{{validation_response.json.result.policy_violations}}"
+
+    - name: Create job templates for each policy violation
+      awx.awx.job_template:
+        # name: "{{ item.playbook.split('.') | first }}-{{ item.resource.etag.replace('\"', '').split('/') | last }}"
+        name: "{{ item.playbook.split('.') | first }}-{{ item.id | last }}"
+        job_type: "run"
+        organization: "Default"
+        inventory: "Demo Inventory"
+        project: "Policy as Code"
+        playbook: "{{ item.playbook }}"
+        credentials:
+          - "AAP Admin"
+        execution_environment: "Policy as Code Execution Environment"
+        # extra_vars: "{{ item.playbook_variables }}"
+      when: item.playbook != 'Not implemented'
+      with_items: "{{ policy_violations }}"
+      register: create_job_template_results
+      check_mode: no
